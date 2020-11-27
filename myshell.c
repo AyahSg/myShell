@@ -32,7 +32,7 @@ void sigintOn(){
 void handle_sigchld(int sig) {
     int saved_errno = errno;
     while (waitpid((pid_t)(-1), 0, WNOHANG) > 0) {}
-    errno = saved_errno;
+    if (errno != ECHILD || EINTR) errno = saved_errno;
 }
 
 int isBackgroundCommand(int count, char **arglist) {
@@ -71,7 +71,7 @@ int isPipingCommand(int count, char **arglist) {
     return 0;
 }
 
-void handlePiping(int count, char **arglist, int index) {
+void handlePiping(char **arglist, int index) {
     arglist[index]= NULL; //this will be the last entry in the first arglist
 
     int pipefds[2];
@@ -166,7 +166,7 @@ int process_arglist(int count, char **arglist) {
         handleBackground(count,arglist);
     }
     else if ((index=isPipingCommand(count, arglist)) != 0){
-        handlePiping(count,arglist, index);
+        handlePiping(arglist, index);
     }
     else {
         handleNormalCommand(arglist);
